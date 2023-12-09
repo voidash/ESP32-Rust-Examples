@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/home/cdjk/github/esp-items/esp32-80211-tx/CMakeFiles/bootloader
+/home/cdjk/github/esp-items/esp32-80211-tx/CMakeFiles/bootloader.rule
+/home/cdjk/github/esp-items/esp32-80211-tx/CMakeFiles/bootloader-complete.rule
+/home/cdjk/github/esp-items/esp32-80211-tx/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/home/cdjk/github/esp-items/esp32-80211-tx/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/home/cdjk/github/esp-items/esp32-80211-tx/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/home/cdjk/github/esp-items/esp32-80211-tx/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/home/cdjk/github/esp-items/esp32-80211-tx/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/home/cdjk/github/esp-items/esp32-80211-tx/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/home/cdjk/github/esp-items/esp32-80211-tx/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

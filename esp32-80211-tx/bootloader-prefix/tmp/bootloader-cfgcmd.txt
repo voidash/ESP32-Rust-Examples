@@ -1,0 +1,1 @@
+cmd='/usr/bin/cmake;-DSDKCONFIG=/home/cdjk/github/esp-items/esp32-80211-tx/sdkconfig;-DIDF_PATH=/home/cdjk/esp/esp-idf;-DIDF_TARGET=esp32;-DPYTHON_DEPS_CHECKED=1;-DPYTHON=python;-DEXTRA_COMPONENT_DIRS=/home/cdjk/esp/esp-idf/components/bootloader;-DPROJECT_SOURCE_DIR=/home/cdjk/github/esp-items/esp32-80211-tx;-DIGNORE_EXTRA_COMPONENT=;-GUnix Makefiles;<SOURCE_DIR><SOURCE_SUBDIR>'
