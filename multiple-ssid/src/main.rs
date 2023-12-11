@@ -1,5 +1,6 @@
 use esp_idf_svc::sys::{ESP_ERR_NVS_NO_FREE_PAGES, ESP_ERR_NVS_NEW_VERSION_FOUND};
 use esp_idf_sys::{self, wifi_interface_t_WIFI_IF_AP, wifi_ps_type_t_WIFI_PS_NONE};
+use std::ffi::CString;
 
 #[macro_export]
 
@@ -13,6 +14,13 @@ macro_rules! error_check {
         log::info!("No error in {}", $y);
     }
 }
+
+fn set_str(buf: &mut [u8], s: &str) {
+   let cs = CString::new(s).unwrap(); 
+   let ss = cs.as_bytes_with_nul();
+   buf[..ss.len()].copy_from_slice(ss);
+}
+
 fn main() {
     // It is necessary to call this function once. Otherwise some patches to the runtime
     // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
@@ -74,8 +82,8 @@ fn main() {
 
             let mut ap_config = esp_idf_sys::wifi_config_t {
                 ap: esp_idf_sys::wifi_ap_config_t {
-                    ssid: "voidash".as_bytes().try_into().unwrap(),
-                    password: "hsadiov789".as_bytes().try_into().unwrap(),
+                    ssid: [0; 32],
+                    password: [0; 64],
                     ssid_len: 0,
                     channel: 1,
                     authmode: esp_idf_sys::wifi_auth_mode_t_WIFI_AUTH_WPA2_PSK,
@@ -85,6 +93,8 @@ fn main() {
                     ..Default::default()
                 }
             };
+            set_str(&mut ap_config.ap.ssid, "voidash");
+            set_str(&mut ap_config.ap.password, "voidash123");
 
             error_check!(esp_idf_sys::esp_wifi_set_config(wifi_interface_t_WIFI_IF_AP, &mut ap_config), "can't assign configuration");
             error_check!(esp_idf_sys::esp_wifi_start(), "unable to start");
