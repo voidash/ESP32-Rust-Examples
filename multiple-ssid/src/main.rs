@@ -1,6 +1,8 @@
+#![allow(unused)]
+
 use esp_idf_svc::sys::{ESP_ERR_NVS_NO_FREE_PAGES, ESP_ERR_NVS_NEW_VERSION_FOUND};
 use esp_idf_sys::{self, wifi_interface_t_WIFI_IF_AP, wifi_ps_type_t_WIFI_PS_NONE};
-use std::ffi::CString;
+use std::ffi::{CString,c_void};
 
 #[macro_export]
 
@@ -21,6 +23,75 @@ fn set_str(buf: &mut [u8], s: &str) {
    buf[..ss.len()].copy_from_slice(ss);
 }
 
+
+const RAW_BEACON : [u8; 57] = [
+	0x80, 0x00,							// 0-1: Frame Control
+	0x00, 0x00,							// 2-3: Duration
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff,				// 4-9: Destination address (broadcast)
+	0xba, 0xde, 0xaf, 0xfe, 0x00, 0x06,				// 10-15: Source address
+	0xba, 0xde, 0xaf, 0xfe, 0x00, 0x06,				// 16-21: BSSID
+	0x00, 0x00,							// 22-23: Sequence / fragment number
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,			// 24-31: Timestamp (GETS OVERWRITTEN TO 0 BY HARDWARE)
+	0x64, 0x00,							// 32-33: Beacon interval
+	0x31, 0x04,							// 34-35: Capability info
+	0x00, 0x00, 				// 36-38: SSID parameter set, 0x00:length:content
+	0x01, 0x08, 0x82, 0x84,	0x8b, 0x96, 0x0c, 0x12, 0x18, 0x24,	// 39-48: Supported rates
+	0x03, 0x01, 0x01,						// 49-51: DS Parameter set, current channel 1 (= 0x01),
+	0x05, 0x04, 0x01, 0x02, 0x00, 0x00,				// 52-57: Traffic Indication Map
+];
+
+const SSID : [&'static str;9] = [
+    "Oh,the night is my world",
+    "City light painted girl",
+    "In the day nothing matters",
+    "In the night, no control",
+    "Through the wall something's breaking",
+    "Wearing white as you're walkin",
+    "Down the street of my soul",
+    "You take my self, you take my self control",
+    "You got me livin' only for the night",
+];
+
+const NO_OF_SSID : usize = SSID.len();
+const BEACON_OFFSET: usize  = 38;
+const SRCADDR_OFFSET: usize= 10;
+const BSSID_OFFSET: usize= 16;
+const SEQNUM_OFFSET: usize = 22;
+
+
+fn spam_task() {
+    let mut line = 0;
+    
+    let mut sequence_number = [0u32;NO_OF_SSID];
+    loop {
+        // insert lines into the beacon packet
+        log::info!("SSID {}", SSID[line]);
+        let mut new_beacon : [u8;200] = [0;200] ;
+        new_beacon[0..BEACON_OFFSET].copy_from_slice(&RAW_BEACON[0..BEACON_OFFSET]);
+        new_beacon[BEACON_OFFSET-1] = SSID[line].len() as u8; 
+        let mut str_bytes: [u8; 64] = [0; 64];
+        set_str(&mut str_bytes,SSID[line]);
+        new_beacon[BEACON_OFFSET..(BEACON_OFFSET + str_bytes.len())].copy_from_slice(&str_bytes);
+        new_beacon[(BEACON_OFFSET + str_bytes.len())..(BEACON_OFFSET + str_bytes.len() + RAW_BEACON.len() - BEACON_OFFSET)].copy_from_slice(&RAW_BEACON[BEACON_OFFSET..]);
+
+        new_beacon[SRCADDR_OFFSET + 5] = line as u8;
+        new_beacon[BSSID_OFFSET + 5] = line as u8;
+
+        new_beacon[SEQNUM_OFFSET] = ((sequence_number[line] & 0x0f) << 4) as u8;
+        new_beacon[SEQNUM_OFFSET + 1] = ((sequence_number[line] & 0xff0) >> 4) as u8;
+        sequence_number[line] += 1;
+
+        if sequence_number[line] > 0xfff {
+            sequence_number[line] = 0;
+        } 
+        unsafe {esp_idf_sys::esp_wifi_80211_tx(esp_idf_sys::wifi_interface_t_WIFI_IF_AP, &new_beacon as *const [u8] as *const c_void, new_beacon.len() as i32, false)};
+        line += 1;
+        if line >= NO_OF_SSID {
+            line = 0;
+        }
+    }
+}
+
 fn main() {
     // It is necessary to call this function once. Otherwise some patches to the runtime
     // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
@@ -31,7 +102,6 @@ fn main() {
     // Embassy is async await for embedded  
     //
     unsafe {
-        log::info!("nothing happens inside here");
         //There is no EEPROM on ESP32, just NVS which is non volatile key value store with different
         // data types.
         let ret = esp_idf_sys::nvs_flash_init();
@@ -100,8 +170,7 @@ fn main() {
             error_check!(esp_idf_sys::esp_wifi_start(), "unable to start");
             error_check!(esp_idf_sys::esp_wifi_set_ps(wifi_ps_type_t_WIFI_PS_NONE), "Error when setting power save mode to None");
 
-
-
+            spam_task();
     }
 
 
